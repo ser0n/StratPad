@@ -1,0 +1,2 @@
+# StratPad
+Wildstar addon

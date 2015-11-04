@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Addon Author="ser0n" APIVersion="11" Name="StratPad" Description="">
+    <Script Name="Libs/LibJSON/LibJSON-2.5.lua"/>
+    <Script Name="StratPad.lua"/>
+    <Form Name="StratPad.xml"/>
+</Addon>
