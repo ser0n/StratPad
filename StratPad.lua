@@ -14,7 +14,7 @@ local StratPad = {
 	version = {
 		major = "0",
 		minor = "3",
-		patch = "2"
+		patch = "3"
 	}
 } 
 
@@ -277,7 +277,7 @@ function StratPad:BuildTableFromMessage(message)
 end
 
 function StratPad:FormatString(list, str)
-	local bIcon = string.find(str, "{%a-}")
+	local bIcon = string.find(str, "{.-}")
 	local bColor = string.find(str, "|c.-|r")
 	
 	if bIcon and bColor then
@@ -315,7 +315,7 @@ function StratPad:HandleColor(list, str, bColor) -- TODO
 end
 
 function StratPad:HandleIcon(list, str, bIcon) -- TODO
-	local icon = string.match(str, "{%a-}")
+	local icon = string.match(str, "{.-}")
 	if bIcon > 1 then
 		local t = { text = string.sub(str, 1, bIcon - 1) }
 		table.insert(list, t)
