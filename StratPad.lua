@@ -121,7 +121,7 @@ function StratPad:OnDocLoaded()
 		-- Register handlers for events, slash commands and timer, etc.
 		-- e.g. Apollo.RegisterEventHandler("KeyDown", "OnKeyDown", self)
 		Apollo.RegisterSlashCommand("stratpad", "OnStratPadOn", self)
-		Apollo.RegisterSlashCommand("sp", "OnStratPadOn", self)
+		-- Apollo.RegisterSlashCommand("st", "OnStratPadOn", self)
 
 
 		-- Do additional Addon initialization here
@@ -148,10 +148,7 @@ function StratPad:OnStratPadOn()
 	self.wndMain:Invoke() -- show the window
 end
 
-function StratPad:OnMessageReceived(channel, strMessage, idMessage)
-	self.wndDisplay:Show(true, true)
-	self.wndDisplay:FindChild("txtDisplay"):SetText(strMessage)
-end
+
 
 function StratPad:OnSave(eLevel)
 	if eLevel ~= GameLib.CodeEnumAddonSaveLevel.Character then return end
@@ -163,7 +160,7 @@ function StratPad:OnSave(eLevel)
 	tData.config = self:DeepCopy(self.config)
 	--tData.data = self:DeepCopy(self.data)
 	
-	return tData 
+	return tData
 end
 
 function StratPad:OnRestore(eLevel, tData)
@@ -179,18 +176,25 @@ function StratPad:OnRestore(eLevel, tData)
 end
 
 -----------------------------------------------------------------------------------------------
--- StratPadForm UI Events
+-- StratPadForm Events
 -----------------------------------------------------------------------------------------------
+
+function StratPad:OnMessageReceived(channel, strMessage, idMessage)
+	local xml = self:BuildXMLFromMessage(strMessage)
+	
+	self.wndDisplay:SetDoc(xml)
+	self.wndDisplay:SetHeightToContentHeight()
+	
+	self.wndDisplay:Show(true, true)
+end
+
 -- when the OK button is clicked
 function StratPad:OnSend()
-	--[[
 	local msg = self.wndMain:FindChild("EditBox"):GetText()
 	if self.share:IsReady() then
 		self.share:SendMessage(msg)
-		self.wndDisplay:Show(true, true)
-		self.wndDisplay:FindChild("txtDisplay"):SetText(msg)
+		self:OnPreview()
 	end
-	]]--
 end
 
 function StratPad:OnPreview()
@@ -202,30 +206,96 @@ function StratPad:OnPreview()
 	self.wndDisplay:SetHeightToContentHeight()
 	
 	self.wndDisplay:Show(true, true)
-	-- self.wndDisplay:SetAML("<T>" .. msg .. "</T>")
-	-- self.wndDisplay:SetHeightToContentHeight()
 end
 
 function StratPad:BuildXMLFromMessage(message)
+	local rows = self:BuildTableFromMessage(message)
 	local xml = XmlDoc.new()
-		
-	xml:AddLine("", ApolloColor.new("white"), "CRB_InterfaceMedium", "Left")
-	xml:AppendImage(icons["chicken"], 16, 16)
-	xml:AppendText(message, ApolloColor.new("ffff3333"), "CRB_InterfaceMedium")
-	xml:AppendText(message, ApolloColor.new("ff33ff33"), "CRB_InterfaceMedium")
-	xml:AppendText(message, ApolloColor.new("ff3333ff"), "CRB_InterfaceMedium")
-
-	xml:AddLine("", ApolloColor.new("white"), "CRB_InterfaceMedium", "Left")
-	xml:AppendText(" ", ApolloColor.new("ffff3333"), "CRB_InterfaceMedium")
 	
+	for ri, row in ipairs(rows) do
+		xml:AddLine("", ApolloColor.new("white"), "CRB_InterfaceMedium", "Left")
+		for pi, part in ipairs(row) do
+			if part.text then
+				xml:AppendText(part.text, part.color or "white", "CRB_InterfaceMedium", "Left")
+			elseif part.icon then
+				local icon = icons[part.icon] or part.icon
+				xml:AppendImage(icon, 20, 20)
+			else
+				xml:AppendText(" ")
+			end
+		end
+	end
+	--[[	
 	xml:AddLine("", ApolloColor.new("white"), "CRB_InterfaceMedium", "Left")
 	xml:AppendImage(icons["chicken"], 16, 16)
-	xml:AppendText(message, ApolloColor.new("ffff3333"), "CRB_InterfaceMedium")
-	xml:AppendText(message, ApolloColor.new("ff33ff33"), "CRB_InterfaceMedium")
-	xml:AppendText(message, ApolloColor.new("ff3333ff"), "CRB_InterfaceMedium")
-
+	xml:AppendText(message, ApolloColor.new("ff33ff33"), "CRB_InterfaceMedium", "Left")
+	]]--
 	return xml
 end
+
+function StratPad:BuildTableFromMessage(message)
+	local result = {}
+	
+	local msgRows = self:Split(message, "\n")
+	
+	-- Just text for now
+	-- Just having a single {medic} on this fight
+	-- Stack on {bomb} then goto {chicken} and dance
+	-- Testing with |cFFFF0000this should be colored|r and this should also |cFF00FF00some more color|r
+	-- Testing with both {bomb} and |cFF0000FFcolor|r
+	-- And other order |cFFFFFF00color first|r and then the icon {warrior}
+	for i,str in ipairs(msgRows) do
+		local row = {}
+		self:FormatString(row, str)
+		table.insert(result, row)
+	end
+	
+	return result
+end
+
+function StratPad:FormatString(list, str)
+	local bIcon = string.find(str, "{%a+}")
+	
+	if bIcon then
+		local icon = string.match(str, "{%a+}")
+		if bIcon > 1 then
+			local t = { text = string.sub(str, 1, bIcon - 2) }
+			table.insert(list, t)
+			str = string.sub(str, bIcon)
+		else
+			icon = string.sub(icon, 2, string.len(icon) - 1)
+			table.insert(list, { icon = icon })
+			str = string.sub(str, string.len(icon) + 4)
+		end
+		self:FormatString(list, str)
+	else
+		if str == "" then
+			str = " "
+		end
+		table.insert(list, { text = str })
+	end
+end
+
+--[[
+local result = {
+	rows = {
+		[1] = {
+			[1] = { text = "Stack on " },
+			[2] = { icon = "bomb" },
+			[3] = { text = " during P1", color = ApolloColor.new("ffff0000") }
+		},
+		[2] = {
+			[1] = { text = " " }
+		},
+		[3] = {
+			[1] = { icon = "kick" },
+			[2] = { text = " then stack on " },
+			[3] = { icon = "chicken" },
+			[4] = { text = " during P2", color = ApolloColor.new("ff0000ff") }
+		}
+	}
+}
+]]--
 
 function StratPad:OnToggleDisplay()
 	if not self.wndDisplay:IsShown() then
@@ -261,6 +331,31 @@ function StratPad:TableLength(tTable)
   	local count = 0
   	for _ in pairs(tTable) do count = count + 1 end
   	return count
+end
+
+function StratPad:Split(str, delim, maxNb)
+    -- Eliminate bad cases...
+    if string.find(str, delim) == nil then
+        return { str }
+    end
+    if maxNb == nil or maxNb < 1 then
+        maxNb = 0    -- No limit
+    end
+    local result = {}
+    local pat = "(.-)" .. delim .. "()"
+    local nb = 0
+    local lastPos
+    for part, pos in string.gfind(str, pat) do
+        nb = nb + 1
+        result[nb] = part
+        lastPos = pos
+        if nb == maxNb then break end
+    end
+    -- Handle the last field
+    if nb ~= maxNb then
+        result[nb + 1] = string.sub(str, lastPos)
+    end
+    return result
 end
 
 -----------------------------------------------------------------------------------------------
