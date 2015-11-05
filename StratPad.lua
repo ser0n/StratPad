@@ -13,7 +13,7 @@ require "ICComm"
 local StratPad = {
 	version = {
 		major = "0",
-		minor = "2",
+		minor = "3",
 		patch = "0"
 	}
 } 
@@ -67,6 +67,9 @@ function StratPad:new(o)
 
     -- initialize variables here
 	self.config = {}
+	self.data = {
+		templates = {}
+	}
     return o
 end
 
@@ -274,18 +277,59 @@ function StratPad:BuildTableFromMessage(message)
 end
 
 function StratPad:FormatString(list, str)
-	local bIcon = string.find(str, "{%a+}")
+	local bIcon = string.find(str, "{%a-}")
+	local bColor = string.find(str, "|c.-|r")
 	
-	if bIcon then
-		local icon = string.match(str, "{%a+}")
+	if bIcon and bColor then
+		if bIcon < bColor then -- Icon before color
+			local icon = string.match(str, "{%a-}")
+			if bIcon > 1 then
+				local t = { text = string.sub(str, 1, bIcon - 1) }
+				table.insert(list, t)
+				str = string.sub(str, bIcon)
+			else
+				icon = string.sub(icon, 2, string.len(icon) - 1)
+				table.insert(list, { icon = icon })
+				str = string.sub(str, string.len(icon) + 3)
+			end
+			self:FormatString(list, str)
+		else -- Color before Icon
+			local color = string.match(str, "|c.-|r")
+			if bColor > 1 then
+				local t = { text = string.sub(str, 1, bColor - 1) }
+				table.insert(list, t)
+				str = string.sub(str, bColor)
+			else
+				local tColor = string.sub(color, 3, 10)
+				local tText = string.sub(color, 11, string.len(color) - 2)
+				table.insert(list, { text = tText, color = tColor })
+				str = string.sub(str, string.len(color) + 1)
+			end
+			self:FormatString(list, str)
+		end
+	elseif bColor then -- Should use HandleColor
+		local color = string.match(str, "|c.-|r")
+		if bColor > 1 then
+			local t = { text = string.sub(str, 1, bColor - 1) }
+			table.insert(list, t)
+			str = string.sub(str, bColor)
+		else
+			local tColor = string.sub(color, 3, 10)
+			local tText = string.sub(color, 11, string.len(color) - 2)
+			table.insert(list, { text = tText, color = tColor })
+			str = string.sub(str, string.len(color) + 1)
+		end
+		self:FormatString(list, str)
+	elseif bIcon then -- Should use HandleIcon
+		local icon = string.match(str, "{%a-}")
 		if bIcon > 1 then
-			local t = { text = string.sub(str, 1, bIcon - 2) }
+			local t = { text = string.sub(str, 1, bIcon - 1) }
 			table.insert(list, t)
 			str = string.sub(str, bIcon)
 		else
 			icon = string.sub(icon, 2, string.len(icon) - 1)
 			table.insert(list, { icon = icon })
-			str = string.sub(str, string.len(icon) + 4)
+			str = string.sub(str, string.len(icon) + 3)
 		end
 		self:FormatString(list, str)
 	else
@@ -294,6 +338,14 @@ function StratPad:FormatString(list, str)
 		end
 		table.insert(list, { text = str })
 	end
+end
+
+function StratPad:HandleColor(list, str) -- TODO
+	
+end
+
+function StratPad:HandleIcon(list, str) -- TODO
+	
 end
 
 --[[
