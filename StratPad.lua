@@ -92,6 +92,7 @@ function StratPad:OnDocLoaded()
 	if self.xmlDoc ~= nil and self.xmlDoc:IsLoaded() then
 	    self.wndMain = Apollo.LoadForm(self.xmlDoc, "StratPadMain", nil, self)
 		self.wndDisplay = Apollo.LoadForm(self.xmlDoc, "StratPadDisplay", nil, self)
+		self.wndPreview = Apollo.LoadForm(self.xmlDoc, "StratPadPreview", nil, self)
 		
 		if self.wndMain == nil then
 			Apollo.AddAddonErrorText(self, "Could not load the main window for some reason.")
@@ -101,16 +102,26 @@ function StratPad:OnDocLoaded()
 			Apollo.AddAddonErrorText(self, "Could not load the display window for some reason.")
 			return
 		end
+		if self.wndPreview == nil then
+			Apollo.AddAddonErrorText(self, "Could not load the preview window for some reason.")
+			return
+		end
 		
 		if self.config ~= nil then
 			if self.config.mainWindowOffset and self.config.mainWindowOffset ~= nil then
 				self.wndMain:SetAnchorOffsets(unpack(self.config.mainWindowOffset))
 			end
+			if self.config.displayWindowOffset and self.config.displayWindowOffset ~= nil then
+				self.wndDisplay:SetAnchorOffsets(unpack(self.config.displayWindowOffset))
+			end
+			if self.config.previewWindowOffset and self.config.previewWindowOffset ~= nil then
+				self.wndPreview:SetAnchorOffsets(unpack(self.config.previewWindowOffset))
+			end
 		end
 				
 	    self.wndMain:Show(false, true)
 		self.wndDisplay:Show(false, true)
-
+		self.wndPreview:Show(false, true)
 	
 		-- Connect to ICComm Channel
 		self:Connect()
@@ -156,6 +167,8 @@ function StratPad:OnSave(eLevel)
 	local tData = {}
 	
 	self.config.mainWindowOffset = { self.wndMain:GetAnchorOffsets() }
+	self.config.displayWindowOffset = { self.wndDisplay:GetAnchorOffsets() }
+	self.config.previewWindowOffset = { self.wndPreview:GetAnchorOffsets() }
 
 	tData.config = self:DeepCopy(self.config)
 	--tData.data = self:DeepCopy(self.data)
@@ -180,12 +193,7 @@ end
 -----------------------------------------------------------------------------------------------
 
 function StratPad:OnMessageReceived(channel, strMessage, idMessage)
-	local xml = self:BuildXMLFromMessage(strMessage)
-	
-	self.wndDisplay:SetDoc(xml)
-	self.wndDisplay:SetHeightToContentHeight()
-	
-	self.wndDisplay:Show(true, true)
+	self:DisplayMessage(self.wndDisplay, strMessage)
 end
 
 -- when the OK button is clicked
@@ -193,19 +201,25 @@ function StratPad:OnSend()
 	local msg = self.wndMain:FindChild("EditBox"):GetText()
 	if self.share:IsReady() then
 		self.share:SendMessage(msg)
-		self:OnPreview()
+		self:DisplayMessage(self.wndDisplay, msg)
 	end
 end
 
 function StratPad:OnPreview()
 	local msg = self.wndMain:FindChild("EditBox"):GetText()
 	
-	local xml = self:BuildXMLFromMessage(msg)
+	self:DisplayMessage(self.wndPreview, msg)
+end
+
+function StratPad:DisplayMessage(wndControl, strMessage)
+	if wndControl ~= self.wndDisplay and wndControl ~= self.wndPreview then return end
 	
-	self.wndDisplay:SetDoc(xml)
-	self.wndDisplay:SetHeightToContentHeight()
+	local xml = self:BuildXMLFromMessage(strMessage)
 	
-	self.wndDisplay:Show(true, true)
+	wndControl:SetDoc(xml)
+	wndControl:SetHeightToContentHeight()
+	
+	wndControl:Show(true, true)
 end
 
 function StratPad:BuildXMLFromMessage(message)
@@ -298,17 +312,37 @@ local result = {
 ]]--
 
 function StratPad:OnToggleDisplay()
-	if not self.wndDisplay:IsShown() then
-		self.wndDisplay:Show(true, true)
-	else
-		self.wndDisplay:Show(false, true)
-	end
+	self.wndDisplay:Show(not self.wndDisplay:IsShown(), true)
+	self.wndPreview:Show(not self.wndPreview:IsShown(), true)
 end
 
 function StratPad:OnClose()
 	self.wndMain:Close()
 end
 
+function StratPad:OnDisplayClick( wndHandler, wndControl, eMouseButton, nLastRelativeMouseX, nLastRelativeMouseY, bDoubleClick, bStopPropagation )
+	if wndHandler ~= self.wndDisplay then return end
+	
+	if eMouseButton == GameLib.CodeEnumInputMouse.Right then
+		self.wndDisplay:Show(false, false)
+	end
+end
+
+function StratPad:OnPreviewClick( wndHandler, wndControl, eMouseButton, nLastRelativeMouseX, nLastRelativeMouseY, bDoubleClick, bStopPropagation )
+	if wndHandler ~= self.wndPreview then return end
+	
+	if eMouseButton == GameLib.CodeEnumInputMouse.Right then
+		self.wndPreview:Show(false, false)
+	end
+end
+
+function StratPad:OnAddButtonClick()
+	Print("Add button pressed")
+end
+
+function StratPad:OnDeleteButtonClick()
+	Print("Delete button pressed")
+end
 
 -----------------------------------------------------------------------------------------------
 -- StratPadForm Util
