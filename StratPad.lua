@@ -10,7 +10,13 @@ require "ICComm"
 -----------------------------------------------------------------------------------------------
 -- StratPad Module Definition
 -----------------------------------------------------------------------------------------------
-local StratPad = {} 
+local StratPad = {
+	version = {
+		major = "0",
+		minor = "2",
+		patch = "0"
+	}
+} 
 
 local icons = {
 	-- Marks
@@ -390,6 +396,10 @@ function StratPad:Split(str, delim, maxNb)
         result[nb + 1] = string.sub(str, lastPos)
     end
     return result
+end
+
+function StratPad:GetVersion()
+	return "v" .. self.version.major .. "." .. self.version.minor .. "." .. self.version.patch
 end
 
 -----------------------------------------------------------------------------------------------
