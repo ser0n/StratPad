@@ -14,7 +14,7 @@ local StratPad = {
 	version = {
 		major = "0",
 		minor = "3",
-		patch = "3"
+		patch = "4"
 	}
 } 
 
@@ -38,9 +38,9 @@ local icons = {
 	["stalker"]			= "UI_Icon_CharacterCreate_Class_Stalker",
 	["warrior"]			= "UI_Icon_CharacterCreate_Class_Warrior",
 	-- Roles
-	["tank"]			= "sprCharC_iconArchType_Tank",
-	["healer"]			= "sprCharC_iconArchType_Healer",
-	["dps"]				= "sprCharC_iconArchType_Melee",
+	["tank"]			= "sprMetal_FooterCharacterMaxShields",
+	["healer"]			= "sprMetal_FooterCharacterDefense",
+	["dps"]				= "sprMetal_FooterCharacterAssault",
 	-- Paths
 	["explorer"]		= "UI_Icon_CharacterCreate_Path_Explorer",
 	["scientist"]		= "UI_Icon_CharacterCreate_Path_Scientist",
