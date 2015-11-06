@@ -6,7 +6,7 @@
 require "Window"
 require "ICCommLib"
 require "ICComm"
- 
+require "GroupLib"
 -----------------------------------------------------------------------------------------------
 -- StratPad Module Definition
 -----------------------------------------------------------------------------------------------
@@ -140,7 +140,8 @@ function StratPad:OnDocLoaded()
 		
 		-- Register handlers for events, slash commands and timer, etc.
 		-- e.g. Apollo.RegisterEventHandler("KeyDown", "OnKeyDown", self)
-		Apollo.RegisterSlashCommand("stratpad", "OnStratPadOn", self)
+		Apollo.RegisterSlashCommand("stratpad", 					"OnStratPadOn", self)
+		Apollo.RegisterEventHandler("Group_MemberFlagsChanged", 	"OnGroupMemberFlagsChanged", self)
 		-- Apollo.RegisterSlashCommand("st", "OnStratPadOn", self)
 
 
@@ -165,6 +166,12 @@ end
 
 -- on SlashCommand "/sp"
 function StratPad:OnStratPadOn()
+	local bSendToGroup = true
+	if GroupLib.InRaid() then
+		bSendToGroup = GroupLib.InRaid() and GroupLib.AmILeader()
+	end
+	
+	self.wndMain:FindChild("btnSendToGroup"):Show(bSendToGroup, true)
 	self.wndMain:Invoke() -- show the window
 end
 
@@ -381,6 +388,10 @@ end
 
 function StratPad:OnDeleteButtonClick()
 	Print("Delete button pressed")
+end
+
+function StratPad:OnGroupMemberFlagsChanged(id, boolean, table, n)
+	
 end
 
 -----------------------------------------------------------------------------------------------
