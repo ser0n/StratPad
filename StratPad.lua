@@ -13,8 +13,8 @@ require "GroupLib"
 local StratPad = {
 	version = {
 		major = "0",
-		minor = "3",
-		patch = "4"
+		minor = "4",
+		patch = "0"
 	}
 } 
 
@@ -146,6 +146,8 @@ function StratPad:OnDocLoaded()
 
 
 		-- Do additional Addon initialization here
+		self.templateList = self.wndMain:FindChild("LeftCol")
+		self.mainEditBox = self.wndMain:FindChild("ebMainText")
 	end
 end
 
@@ -173,9 +175,48 @@ function StratPad:OnStratPadOn()
 	
 	self.wndMain:FindChild("btnSendToGroup"):Show(bSendToGroup, true)
 	self.wndMain:Invoke() -- show the window
+	self:UpdateTemplateList()
 end
 
+function StratPad:UpdateTemplateList()
+	self.templateList:DestroyChildren()
 
+	for i, peCurrent in pairs(self.data.templates) do
+		self:DrawTemplateItem(i)
+	end
+end
+
+function StratPad:DrawTemplateItem(templateId)
+	local newTemplateItem = Apollo.LoadForm(self.xmlDoc,"StratPadTemplateListItem", self.templateList, self)	
+
+	local button = newTemplateItem:FindChild("btnTemplate")
+	--local color = self:GetColor(templateId)
+
+	button:SetData(templateId)
+	newTemplateItem:SetName("template_" .. templateId)
+	
+	button:SetText(templateId)
+	
+	if self.lastSelected ~= nil and self.lastSelected == templateId then
+		button:SetCheck(true)
+	end
+	
+	self.templateList:ArrangeChildrenVert()
+end
+
+function StratPad:GetTemplate(templateId)
+	local template = self.data.templates[templateId]
+	
+	if template == nil then
+		
+	end
+	
+	return template
+end
+
+-----------------------------------------------------------------------------------------------
+-- StratPad Save/Restore
+-----------------------------------------------------------------------------------------------
 
 function StratPad:OnSave(eLevel)
 	if eLevel ~= GameLib.CodeEnumAddonSaveLevel.Character then return end
@@ -187,7 +228,7 @@ function StratPad:OnSave(eLevel)
 	self.config.previewWindowOffset = { self.wndPreview:GetAnchorOffsets() }
 
 	tData.config = self:DeepCopy(self.config)
-	--tData.data = self:DeepCopy(self.data)
+	tData.data = self:DeepCopy(self.data)
 	
 	return tData
 end
@@ -214,7 +255,7 @@ end
 
 -- when the OK button is clicked
 function StratPad:OnSend()
-	local msg = self.wndMain:FindChild("EditBox"):GetText()
+	local msg = self.mainEditBox:GetText()
 	if self.share:IsReady() then
 		self.share:SendMessage(msg)
 		self:DisplayMessage(self.wndDisplay, msg)
@@ -222,7 +263,7 @@ function StratPad:OnSend()
 end
 
 function StratPad:OnPreview()
-	local msg = self.wndMain:FindChild("EditBox"):GetText()
+	local msg = self.mainEditBox:GetText()
 	
 	self:DisplayMessage(self.wndPreview, msg)
 end
@@ -255,11 +296,6 @@ function StratPad:BuildXMLFromMessage(message)
 			end
 		end
 	end
-	--[[	
-	xml:AddLine("", ApolloColor.new("white"), "CRB_InterfaceMedium", "Left")
-	xml:AppendImage(icons["chicken"], 16, 16)
-	xml:AppendText(message, ApolloColor.new("ff33ff33"), "CRB_InterfaceMedium", "Left")
-	]]--
 	return xml
 end
 
@@ -293,9 +329,9 @@ function StratPad:FormatString(list, str)
 		else -- Color before Icon
 			self:HandleColor(list, str, bColor)
 		end
-	elseif bColor then -- Should use HandleColor
+	elseif bColor then
 		self:HandleColor(list, str, bColor)
-	elseif bIcon then -- Should use HandleIcon
+	elseif bIcon then
 		self:HandleIcon(list, str, bIcon)
 	else
 		if str == "" then
@@ -336,33 +372,13 @@ function StratPad:HandleIcon(list, str, bIcon) -- TODO
 	end
 end
 
---[[
-local result = {
-	rows = {
-		[1] = {
-			[1] = { text = "Stack on " },
-			[2] = { icon = "bomb" },
-			[3] = { text = " during P1", color = ApolloColor.new("ffff0000") }
-		},
-		[2] = {
-			[1] = { text = " " }
-		},
-		[3] = {
-			[1] = { icon = "kick" },
-			[2] = { text = " then stack on " },
-			[3] = { icon = "chicken" },
-			[4] = { text = " during P2", color = ApolloColor.new("ff0000ff") }
-		}
-	}
-}
-]]--
-
 function StratPad:OnToggleDisplay()
 	self.wndDisplay:Show(not self.wndDisplay:IsShown(), true)
 	self.wndPreview:Show(not self.wndPreview:IsShown(), true)
 end
 
 function StratPad:OnClose()
+	self.data.templates[self.lastSelected] = self.mainEditBox:GetText()
 	self.wndMain:Close()
 end
 
@@ -374,7 +390,7 @@ function StratPad:OnDisplayClick( wndHandler, wndControl, eMouseButton, nLastRel
 	end
 end
 
-function StratPad:OnPreviewClick( wndHandler, wndControl, eMouseButton, nLastRelativeMouseX, nLastRelativeMouseY, bDoubleClick, bStopPropagation )
+function StratPad:OnPreviewClick( wndHandler, wndControl, eMouseButton)
 	if wndHandler ~= self.wndPreview then return end
 	
 	if eMouseButton == GameLib.CodeEnumInputMouse.Right then
@@ -383,15 +399,54 @@ function StratPad:OnPreviewClick( wndHandler, wndControl, eMouseButton, nLastRel
 end
 
 function StratPad:OnAddButtonClick()
-	Print("Add button pressed")
+	self.wndMain:FindChild("CreateNewTemplate"):Show(true, true)
 end
 
-function StratPad:OnDeleteButtonClick()
-	Print("Delete button pressed")
+function StratPad:OnDeleteButtonClick(wndHandler, wndControl, eMouseButton)
+	if not self.lastSelected then return end
+	
+	self.data.templates[self.lastSelected] = nil
+	self.lastSelected = nil
+	self:UpdateTemplateList()
+end
+
+function StratPad:OnSaveTemplateButtonClick()
+	local popup = self.wndMain:FindChild("CreateNewTemplate")
+	
+	local name = popup:FindChild("ebNewTemplateName"):GetText()
+	
+	if self.data.templates[name] ~= nil then
+		Print("TODO Overwrite msg")
+	end
+	
+	self.data.templates[name] = ""
+	popup:Show(false, true)
+	self.lastSelected = name
+	popup:FindChild("ebNewTemplateName"):SetText("")
+	self.mainEditBox:SetText("")
+	self:UpdateTemplateList()
+end
+
+function StratPad:OnCancelTemplateButtonClick()
+	local popup = self.wndMain:FindChild("CreateNewTemplate")
+	popup:FindChild("ebNewTemplateName"):SetText("")
+	popup:Show(false, true)
+end
+
+function StratPad:OnTemplateListItemButtonClick(wndHandler, wndControl, eMouseButton)
+	if self.lastSelected then
+		self.data.templates[self.lastSelected] = self.mainEditBox:GetText()
+	end
+	local template = self:GetTemplate(wndControl:GetData())
+	
+	if template ~= nil then
+		self.mainEditBox:SetText(template)
+		self.lastSelected = wndControl:GetData()
+	end
 end
 
 function StratPad:OnGroupMemberFlagsChanged(id, boolean, table, n)
-	
+	-- GroupLib.GetGroupMember(1) -> t.bRaidAssistant && t.bMainAssist
 end
 
 -----------------------------------------------------------------------------------------------
