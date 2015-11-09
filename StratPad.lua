@@ -14,7 +14,7 @@ local StratPad = {
 	version = {
 		major = "0",
 		minor = "4",
-		patch = "0"
+		patch = "1"
 	}
 } 
 
@@ -24,8 +24,8 @@ local icons = {
 	["chicken"] 		= "Icon_Windows_UI_CRB_Marker_Chicken",
 	["crosshair"] 		= "Icon_Windows_UI_CRB_Marker_Crosshair",
 	["ghost"] 			= "Icon_Windows_UI_CRB_Marker_Ghost",
-	["Mask"] 			= "Icon_Windows_UI_CRB_Marker_Mask",
-	["octopus"] 		= "Icon_Windows_UI_CRB_Marker_Octopus",
+	["mask"] 			= "Icon_Windows_UI_CRB_Marker_Mask",
+	["squid"] 			= "Icon_Windows_UI_CRB_Marker_Octopus",
 	["pig"] 			= "Icon_Windows_UI_CRB_Marker_Pig",
 	["toaster"] 		= "Icon_Windows_UI_CRB_Marker_Toaster",
 	["ufo"] 			= "Icon_Windows_UI_CRB_Marker_Ufo",
@@ -380,6 +380,7 @@ end
 function StratPad:OnClose()
 	self.data.templates[self.lastSelected] = self.mainEditBox:GetText()
 	self.wndMain:Close()
+	self.wndMain:FindChild("CreateNewTemplate"):Show(false, true)
 end
 
 function StratPad:OnDisplayClick( wndHandler, wndControl, eMouseButton, nLastRelativeMouseX, nLastRelativeMouseY, bDoubleClick, bStopPropagation )
@@ -399,7 +400,9 @@ function StratPad:OnPreviewClick( wndHandler, wndControl, eMouseButton)
 end
 
 function StratPad:OnAddButtonClick()
-	self.wndMain:FindChild("CreateNewTemplate"):Show(true, true)
+	local popup = self.wndMain:FindChild("CreateNewTemplate")
+	popup:Show(true, true)
+	popup:FindChild("ebNewTemplateName"):SetFocus()
 end
 
 function StratPad:OnDeleteButtonClick(wndHandler, wndControl, eMouseButton)
@@ -443,6 +446,12 @@ function StratPad:OnTemplateListItemButtonClick(wndHandler, wndControl, eMouseBu
 		self.mainEditBox:SetText(template)
 		self.lastSelected = wndControl:GetData()
 	end
+end
+
+-- 27 lines
+function StratPad:OnMainTextChanged( wndHandler, wndControl, strText )
+	local msgRows = self:Split(strText, "\n")
+	Print(msgRows)
 end
 
 function StratPad:OnGroupMemberFlagsChanged(id, boolean, table, n)
