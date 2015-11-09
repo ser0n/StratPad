@@ -14,7 +14,7 @@ local StratPad = {
 	version = {
 		major = "0",
 		minor = "4",
-		patch = "2"
+		patch = "3"
 	}
 } 
 
@@ -378,7 +378,9 @@ function StratPad:OnToggleDisplay()
 end
 
 function StratPad:OnClose()
-	self.data.templates[self.lastSelected] = self.mainEditBox:GetText()
+	if self.data.templates[self.lastSelected] then
+		self.data.templates[self.lastSelected] = self.mainEditBox:GetText()
+	end
 	self.wndMain:Close()
 	self.wndMain:FindChild("CreateNewTemplate"):Show(false, true)
 end
