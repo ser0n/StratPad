@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Addon Author="ser0n" APIVersion="11" Name="StratPad" Description="" Version="0.4.0">
+<Addon Author="ser0n" APIVersion="11" Name="StratPad" Description="" Version="0.4.1">
     <Script Name="StratPad.lua"/>
     <Form Name="StratPad.xml"/>
 </Addon>

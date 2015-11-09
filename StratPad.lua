@@ -14,7 +14,7 @@ local StratPad = {
 	version = {
 		major = "0",
 		minor = "4",
-		patch = "1"
+		patch = "2"
 	}
 } 
 
@@ -446,12 +446,6 @@ function StratPad:OnTemplateListItemButtonClick(wndHandler, wndControl, eMouseBu
 		self.mainEditBox:SetText(template)
 		self.lastSelected = wndControl:GetData()
 	end
-end
-
--- 27 lines
-function StratPad:OnMainTextChanged( wndHandler, wndControl, strText )
-	local msgRows = self:Split(strText, "\n")
-	Print(msgRows)
 end
 
 function StratPad:OnGroupMemberFlagsChanged(id, boolean, table, n)
