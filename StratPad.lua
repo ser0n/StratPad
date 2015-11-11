@@ -14,7 +14,7 @@ local StratPad = {
 	version = {
 		major = "0",
 		minor = "4",
-		patch = "3"
+		patch = "4"
 	}
 } 
 
@@ -169,9 +169,11 @@ end
 -- on SlashCommand "/sp"
 function StratPad:OnStratPadOn()
 	local bSendToGroup = true
+	--[[
 	if GroupLib.InRaid() then
 		bSendToGroup = GroupLib.InRaid() and GroupLib.AmILeader()
 	end
+	]]--
 	
 	self.wndMain:FindChild("btnSendToGroup"):Show(bSendToGroup, true)
 	self.wndMain:Invoke() -- show the window
@@ -251,6 +253,7 @@ end
 
 function StratPad:OnMessageReceived(channel, strMessage, idMessage)
 	self:DisplayMessage(self.wndDisplay, strMessage)
+	self.data.lastReceivedMsg = strMessage
 end
 
 -- when the OK button is clicked
@@ -259,6 +262,7 @@ function StratPad:OnSend()
 	if self.share:IsReady() then
 		self.share:SendMessage(msg)
 		self:DisplayMessage(self.wndDisplay, msg)
+		self.data.lastReceivedMsg = msg
 	end
 end
 
@@ -374,6 +378,12 @@ end
 
 function StratPad:OnToggleDisplay()
 	self.wndDisplay:Show(not self.wndDisplay:IsShown(), true)
+	if self.data.lastReceivedMsg then
+		self:DisplayMessage(self.wndDisplay, self.data.lastReceivedMsg)
+	end
+end
+
+function StratPad:OnTogglePreview()
 	self.wndPreview:Show(not self.wndPreview:IsShown(), true)
 end
 
